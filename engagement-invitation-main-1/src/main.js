@@ -116,6 +116,9 @@ ${ art.defs() }
 
 	<section class="save-date section" aria-labelledby="save-title">
 		<figure class="polaroid">
+			<div class="polaroid-photo">
+				<img src="${ import.meta.env.BASE_URL }save-the-date.jpg" width="1024" height="1536" loading="lazy" decoding="async" alt="Illustrated engagement announcement with childhood photos of Manoj and Nikitha holding hands." />
+			</div>
 			<figcaption class="polaroid-caption">
 				<h2 class="polaroid-title" id="save-title"><span class="p-heart" aria-hidden="true">♡</span>Save <em>the</em> Date<span class="p-heart" aria-hidden="true">♡</span></h2>
 				<p class="polaroid-rule" aria-hidden="true"><span></span>♡<span></span></p>
@@ -559,24 +562,46 @@ function motion() {
 	let returnScrollTimer;
 	let autoScrolling = false;
 	const reducedMotion = window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
-	const durationFor = ( distance ) => Math.max( 16, distance / 90 );
+	const durationFor = ( distance ) => Math.max( 2, distance / 90 );
+	const autoPages = [ '.story-name', '.story-families', '.save-date', '.ceremony', '.venue', '.footer' ];
+	let nextPageIndex = 0;
 	const autoScrollCycle = () => {
 		autoScrolling = true;
+		if ( nextPageIndex < autoPages.length ) {
+			const page = $( autoPages[ nextPageIndex ] );
+			if ( ! page ) {
+				nextPageIndex++;
+				autoScrolling = false;
+				autoScrollTimer = setTimeout( autoScrollCycle, 5000 );
+				return;
+			}
+			lenis.scrollTo( page, {
+				duration: nextPageIndex === 0
+					? Math.max( 2, Math.abs( page.getBoundingClientRect().top ) / 180 )
+					: durationFor( Math.abs( page.getBoundingClientRect().top ) ),
+				easing: ( t ) => t,
+				onComplete: () => {
+					autoScrolling = false;
+					nextPageIndex++;
+					autoScrollTimer = setTimeout( autoScrollCycle, 5000 );
+				},
+			} );
+			return;
+		}
 		lenis.scrollTo( 'bottom', {
 			duration: durationFor( lenis.limit - lenis.scroll ),
 			easing: ( t ) => t,
 			onComplete: () => {
 				returnScrollTimer = setTimeout( () => {
-					const venueDistance = Math.max( 0, -$( '.venue' ).getBoundingClientRect().top );
-					lenis.scrollTo( '.venue', {
-						duration: durationFor( venueDistance ),
-						easing: ( t ) => t,
+					lenis.scrollTo( 'top', {
+						immediate: true,
 						onComplete: () => {
 							autoScrolling = false;
-							autoScrollTimer = setTimeout( autoScrollCycle, 10000 );
+							nextPageIndex = 0;
+							autoScrollTimer = setTimeout( autoScrollCycle, 5000 );
 						},
 					} );
-				}, 1500 );
+				}, 5000 );
 			},
 		} );
 	};
@@ -588,13 +613,15 @@ function motion() {
 			lenis.start();
 			autoScrolling = false;
 		}
+		const nextPage = autoPages.findIndex( ( selector ) => $( selector ).getBoundingClientRect().top > 100 );
+		nextPageIndex = nextPage < 0 ? autoPages.length : nextPage;
 		autoScrollTimer = setTimeout( autoScrollCycle, 10000 );
 	};
 	if ( ! reducedMotion ) {
 		[ 'wheel', 'touchstart', 'touchmove', 'pointerdown', 'keydown', 'focusin' ].forEach( ( event ) =>
 			window.addEventListener( event, pauseForGuest, { passive: true, capture: true } )
 		);
-		autoScrollTimer = setTimeout( autoScrollCycle, 2000 );
+		autoScrollTimer = setTimeout( autoScrollCycle, 5000 );
 	}
 
 	// The endless decoration (falling petals, rising hearts, heartbeats) runs on its own,
