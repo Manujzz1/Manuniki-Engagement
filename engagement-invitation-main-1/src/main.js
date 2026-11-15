@@ -116,9 +116,6 @@ ${ art.defs() }
 
 	<section class="save-date section" aria-labelledby="save-title">
 		<figure class="polaroid">
-			<div class="polaroid-photo">
-				<img src="${ import.meta.env.BASE_URL }save-the-date.jpg" width="1024" height="1536" loading="lazy" decoding="async" alt="Illustrated engagement announcement with childhood photos of Manoj and Nikitha holding hands." />
-			</div>
 			<figcaption class="polaroid-caption">
 				<h2 class="polaroid-title" id="save-title"><span class="p-heart" aria-hidden="true">♡</span>Save <em>the</em> Date<span class="p-heart" aria-hidden="true">♡</span></h2>
 				<p class="polaroid-rule" aria-hidden="true"><span></span>♡<span></span></p>
