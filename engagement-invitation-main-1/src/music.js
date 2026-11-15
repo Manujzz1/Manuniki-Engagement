@@ -1,11 +1,9 @@
 /**
  * Background music, on a loop and on by default.
  *
- * `play()` is called as the page loads. Browsers usually allow sound only after the
- * guest has tapped, clicked or pressed a key (scrolling does not count), so if that
- * first attempt is blocked, the guest's first tap starts it, such as tapping the MN
- * seal to open the envelope. Until then a "Tap for music" button shows in the corner;
- * the same button pauses and resumes the music.
+ * `play()` is called when the envelope starts opening. Browsers may require a guest
+ * gesture before playing sound, so if the attempt is blocked, a "Tap for music" button
+ * appears; the same button pauses and resumes the music.
  *
  * The file in public/audio is already trimmed to the part that loops: "The Love Bug
  * Has Bitten (Background Score)" from 0:23 to the end of its fade-out, with a short

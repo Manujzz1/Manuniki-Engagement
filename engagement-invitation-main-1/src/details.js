@@ -46,8 +46,8 @@ export const engagement = {
 		note: '',
 	},
 
-	// Background music, on a loop and on by default: it begins as the page loads (or on
-	// the first tap, where the browser insists). The file is in public/audio, already
+	// Background music, on a loop: it begins with the envelope opening (or on the first
+	// tap, where the browser insists). The file is in public/audio, already
 	// trimmed to start at 0:23 of the track. Set `src` to '' for no music.
 	music: {
 		src: 'audio/love-bug-has-bitten.mp3',

@@ -525,6 +525,29 @@ function smoothScroll() {
 	return lenis;
 }
 
+function keepScreenAwake() {
+	let sentinel = null;
+	let requested = false;
+	let pending = false;
+	const request = async () => {
+		requested = true;
+		if ( ! navigator.wakeLock || document.visibilityState !== 'visible' || ( sentinel && ! sentinel.released ) || pending ) return;
+		pending = true;
+		try {
+			sentinel = await navigator.wakeLock.request( 'screen' );
+			sentinel.addEventListener( 'release', () => { sentinel = null; } );
+		} catch {
+			sentinel = null;
+		} finally {
+			pending = false;
+		}
+	};
+	document.addEventListener( 'visibilitychange', () => {
+		if ( requested && document.visibilityState === 'visible' ) request();
+	} );
+	return request;
+}
+
 function motion() {
 	const mm = gsap.matchMedia();
 
@@ -533,16 +556,27 @@ function motion() {
 	// Many phones report reduced motion without the guest asking for it (Android's
 	// battery saver turns on "Remove animations"), which left mobile with no animation.
 	const lenis = smoothScroll();
-	// Music is on by default: it starts as the page loads where the browser allows it,
-	// otherwise with the guest's first tap, such as tapping the MN seal to open the envelope.
-	if ( E.music && E.music.src ) {
-		createMusic( E.music ).play();
-	}
+	const music = E.music && E.music.src ? createMusic( E.music ) : null;
+	const requestWakeLock = keepScreenAwake();
+	let presentationStarted = false;
+	const startPresentation = () => {
+		if ( ! presentationStarted ) {
+			presentationStarted = true;
+			music && music.play();
+		}
+		requestWakeLock();
+	};
 	const intro = introTimeline();
+	intro.eventCallback( 'onUpdate', () => {
+		if ( intro.progress() > 0 && ! presentationStarted ) startPresentation();
+	} );
 	sections();
 
 	// Tapping the seal plays the opening by scrolling to the end of the pinned intro.
-	$( '.seal' ).addEventListener( 'click', () => lenis.scrollTo( intro.scrollTrigger.end, { duration: 3.2, easing: ( t ) => ( t < 0.5 ? 2 * t * t : 1 - Math.pow( -2 * t + 2, 2 ) / 2 ) } ) );
+	$( '.seal' ).addEventListener( 'click', () => {
+		startPresentation();
+		lenis.scrollTo( intro.scrollTrigger.end, { duration: 3.2, easing: ( t ) => ( t < 0.5 ? 2 * t * t : 1 - Math.pow( -2 * t + 2, 2 ) / 2 ) } );
+	} );
 
 	// The "swipe down" cue carries on to the story, and nudges harder if the guest sits still.
 	const cue = $( '.scroll-cue' );
@@ -562,7 +596,12 @@ function motion() {
 	let returnScrollTimer;
 	let autoScrolling = false;
 	const reducedMotion = window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
-	const durationFor = ( distance ) => Math.max( 2, distance / 90 );
+	const scrollSpeed = () => {
+		const width = window.innerWidth;
+		const viewportRatio = width <= 640 ? 0.075 : width <= 1023 ? 0.1 : 0.13;
+		return Math.min( 140, Math.max( 50, window.innerHeight * viewportRatio ) );
+	};
+	const durationFor = ( distance ) => Math.max( 2, distance / scrollSpeed() );
 	const autoPages = [ '.story-name', '.story-families', '.save-date', '.ceremony', '.venue', '.footer' ];
 	let nextPageIndex = 0;
 	const autoScrollCycle = () => {
@@ -606,6 +645,7 @@ function motion() {
 		} );
 	};
 	const pauseForGuest = () => {
+		requestWakeLock();
 		clearTimeout( autoScrollTimer );
 		clearTimeout( returnScrollTimer );
 		if ( autoScrolling ) {
