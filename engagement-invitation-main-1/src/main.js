@@ -566,6 +566,7 @@ function motion() {
 		}
 		requestWakeLock();
 	};
+	if ( music ) setTimeout( () => music.play(), 3000 );
 	const intro = introTimeline();
 	intro.eventCallback( 'onUpdate', () => {
 		if ( intro.progress() > 0 && ! presentationStarted ) startPresentation();

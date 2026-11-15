@@ -91,16 +91,17 @@ export function createMusic( { src, volume = 0.8 } ) {
 
 	return {
 		play() {
-			if ( wanted ) {
-				return;
+			if ( ! wanted ) {
+				wanted = true;
+				audio.autoplay = true;
+				render();
+				setTimeout( () => {
+					tried = true;
+					render();
+				}, 1200 );
 			}
-			wanted = true;
 			attempt();
 			render();
-			setTimeout( () => {
-				tried = true;
-				render();
-			}, 1200 );
 		},
 	};
 }
