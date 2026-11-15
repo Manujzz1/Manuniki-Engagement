@@ -553,6 +553,50 @@ function motion() {
 	lenis.on( 'scroll', watchIdle );
 	watchIdle();
 
+	// Keep the invitation moving automatically, but pause for guests and resume after
+	// ten seconds without input. Avoid autoplay for guests who prefer reduced motion.
+	let autoScrollTimer;
+	let returnScrollTimer;
+	let autoScrolling = false;
+	const reducedMotion = window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
+	const durationFor = ( distance ) => Math.max( 16, distance / 90 );
+	const autoScrollCycle = () => {
+		autoScrolling = true;
+		lenis.scrollTo( 'bottom', {
+			duration: durationFor( lenis.limit - lenis.scroll ),
+			easing: ( t ) => t,
+			onComplete: () => {
+				returnScrollTimer = setTimeout( () => {
+					const venueDistance = Math.max( 0, -$( '.venue' ).getBoundingClientRect().top );
+					lenis.scrollTo( '.venue', {
+						duration: durationFor( venueDistance ),
+						easing: ( t ) => t,
+						onComplete: () => {
+							autoScrolling = false;
+							autoScrollTimer = setTimeout( autoScrollCycle, 10000 );
+						},
+					} );
+				}, 1500 );
+			},
+		} );
+	};
+	const pauseForGuest = () => {
+		clearTimeout( autoScrollTimer );
+		clearTimeout( returnScrollTimer );
+		if ( autoScrolling ) {
+			lenis.stop();
+			lenis.start();
+			autoScrolling = false;
+		}
+		autoScrollTimer = setTimeout( autoScrollCycle, 10000 );
+	};
+	if ( ! reducedMotion ) {
+		[ 'wheel', 'touchstart', 'touchmove', 'pointerdown', 'keydown', 'focusin' ].forEach( ( event ) =>
+			window.addEventListener( event, pauseForGuest, { passive: true, capture: true } )
+		);
+		autoScrollTimer = setTimeout( autoScrollCycle, 2000 );
+	}
+
 	// The endless decoration (falling petals, rising hearts, heartbeats) runs on its own,
 	// so it is left out for guests who ask for reduced motion.
 	mm.add( '(prefers-reduced-motion: no-preference)', () => ambient() );
